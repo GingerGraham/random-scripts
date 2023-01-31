@@ -1,8 +1,9 @@
 ' VB Script to collect SMTP server details from the user and send an email based on some user input with default options
-' This script is designed to target SMTP servers which do not require authentication
+' This script is designed to target SMTP servers and optionally support authentication and attachments
 ' This script does not accept attachments
 ' This script is intended to be used with the following command line:
-' cscript.exe smtp.vbs /s:smtpserver /f:fromaddress /t:toaddress /o:subject /m:message
+' Support smtpserver, port, username, password, fromaddress, toaddress, subject, message, and attachment
+' cscript.exe SMTP-Test-Auth.vbs /s:smtpserver /p:port /u:username /w:password /f:fromaddress /t:toaddress /o:subject /m:message /a:attachment
 ' The following arguments are supported:
 ' /s:smtpserver - The SMTP server to use
 ' /p:port - The port to use (default is 25)
@@ -34,6 +35,12 @@ For i = 0 to objArgs.Count - 1
         Case "/p"
             ' Set the port
             port = arg(1)
+        Case "/u"
+            ' Set the username
+            username = arg(1)
+        Case "/w"
+            ' Set the password
+            password = arg(1)
         Case "/f"
             ' Set the from address
             fromAddress = arg(1)
@@ -46,6 +53,9 @@ For i = 0 to objArgs.Count - 1
         Case "/m"
             ' Set the message
             message = arg(1)
+        Case "/a"
+            ' Set the attachment
+            attachment = arg(1)
     End Select
 Next
 
@@ -67,14 +77,36 @@ If toAddress = "" Then
     toAddress = InputBox("Please enter the to address to use:", "To Address")
 End If
 
+' Check to make sure the username was specified
+If username = "" Then
+    ' Prompt the user for the username
+    username = InputBox("Please enter the username to use:", "Username")
+End If
+
+' Check to make sure the password was specified and if not, and the username was specified, prompt for the password
+If password = "" And username <> "" Then
+    ' Prompt the user for the password
+    password = InputBox("Please enter the password to use:", "Password")
+End If
+
 ' Create the SMTP object
 Set objSMTP = CreateObject("CDO.Message")
 ' Set the SMTP server
 objSMTP.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = smtpServer
 ' Set the SMTP port
 objSMTP.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = port
-' Set the SMTP authentication to false
-objSMTP.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = 0
+' If a username and password were specified, set the authentication, else set the authentication to false
+If username <> "" and password <> "" Then
+    ' Set the authentication to true
+    objSMTP.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = 1
+    ' Set the username
+    objSMTP.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/sendusername") = username
+    ' Set the password
+    objSMTP.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/sendpassword") = password
+Else
+    ' Set the authentication to false
+    objSMTP.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = 0
+End If
 ' Update the configuration
 objSMTP.Configuration.Fields.Update
 ' Set the from address
@@ -85,5 +117,10 @@ objSMTP.To = toAddress
 objSMTP.Subject = subject
 ' Set the message
 objSMTP.TextBody = message
+' If an attachment was specified, add it to the email
+If attachment <> "" Then
+    ' Add the attachment
+    objSMTP.AddAttachment attachment
+End If
 ' Send the email
 objSMTP.Send
