@@ -7,10 +7,13 @@
 ' The following arguments are supported:
 ' /s:smtpserver - The SMTP server to use
 ' /p:port - The port to use (default is 25)
+' /u:username - The username to use for authentication (optional)
+' /w:password - The password to use for authentication (optional)
 ' /f:fromaddress - The from address to use
 ' /t:toaddress - The to address to use
 ' /o:subject - The subject to use (default is "Test Email <date> <time>")
 ' /m:message - The message to use (default is "This is a test email sent at <date> <time>")
+' /a:attachment - The attachment to use (optional)
 
 ' Set the default values for the variables
 Dim smtpServer, port, fromAddress, toAddress, subject, message
