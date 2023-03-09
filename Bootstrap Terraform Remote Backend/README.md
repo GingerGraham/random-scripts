@@ -252,3 +252,76 @@ python .\terraform-remote-bootstrap.py --region eu-west-2 -C
 2023-03-09 09:16:51,681 [INFO] =============================================
 2023-03-09 09:16:51,681 [INFO] Terraform Remote Backend Bootstrap Completed!
 ```
+
+### Example With Creation
+
+The following example shows the output when the S3 bucket and DynamoDB table do not exist and are created.
+
+```bash
+python3 terraform-remote-bootstrap.py -r eu-west-2
+2023-03-09 11:11:00,625 [INFO] =========================================
+2023-03-09 11:11:00,625 [INFO] Terraform Remote Backend Bootstrap v1.0.1
+2023-03-09 11:11:00,625 [INFO] =========================================
+2023-03-09 11:11:00,626 [INFO] Supplied Arguments
+2023-03-09 11:11:00,626 [INFO] ==================
+2023-03-09 11:11:00,626 [INFO] Aws Profile : default
+2023-03-09 11:11:00,626 [INFO] Region : eu-west-2
+2023-03-09 11:11:00,626 [INFO] Bucket Name : terraform-remote-state
+2023-03-09 11:11:00,626 [INFO] Bucket Region : None
+2023-03-09 11:11:00,626 [INFO] Bucket Versioning : True
+2023-03-09 11:11:00,626 [INFO] Bucket Encryption : True
+2023-03-09 11:11:00,626 [INFO] Bucket Kms Key Id : None
+2023-03-09 11:11:00,626 [INFO] Bucket Public Access Block : True
+2023-03-09 11:11:00,626 [INFO] Dynamodb Table Enabled : True
+2023-03-09 11:11:00,626 [INFO] Dynamodb Table Name : terraform-remote-state
+2023-03-09 11:11:00,627 [INFO] Dynamodb Table Region : None
+2023-03-09 11:11:00,627 [INFO] Dynamodb Table Read Capacity : 5
+2023-03-09 11:11:00,627 [INFO] Dynamodb Table Write Capacity : 5
+2023-03-09 11:11:00,628 [INFO] Log File : None
+2023-03-09 11:11:00,629 [INFO] Log Level : INFO
+2023-03-09 11:11:00,630 [INFO] List Only : False
+2023-03-09 11:11:00,630 [INFO] ===================
+2023-03-09 11:11:00,631 [INFO] Connecting to AWS
+2023-03-09 11:11:00,631 [INFO] Checking AWS CLI credentials
+2023-03-09 11:11:00,655 [INFO] AWS CLI credentials are configured and profile default exists
+2023-03-09 11:11:00,718 [INFO] AWS Session Details:
+2023-03-09 11:11:00,718 [INFO] Profile: default
+2023-03-09 11:11:00,718 [INFO] Region: eu-west-2
+2023-03-09 11:11:00,744 [INFO] Found credentials in shared credentials file: ~/.aws/credentials
+2023-03-09 11:11:01,326 [INFO] User: arn:aws:iam::583007948674:user/gwatts
+2023-03-09 11:11:01,328 [INFO] Connected to AWS
+2023-03-09 11:11:01,882 [INFO] Found credentials in shared credentials file: ~/.aws/credentials
+2023-03-09 11:11:02,199 [INFO] =======================
+2023-03-09 11:11:02,199 [INFO] S3 Bucket Configuration
+2023-03-09 11:11:02,199 [INFO] =======================
+2023-03-09 11:11:02,199 [INFO] Bucket Name: terraform-remote-state-583007948674
+2023-03-09 11:11:02,199 [INFO] Bucket Region: eu-west-2
+2023-03-09 11:11:02,199 [INFO] Bucket KMS Key ID: None
+2023-03-09 11:11:02,199 [INFO] Bucket KMS Key Alias: alias/terraform-remote-state-583007948674
+2023-03-09 11:11:02,199 [INFO] Bucket Configuration: {'VersioningConfiguration': {'Status': 'Enabled'}, 'ServerSideEncryptionConfiguration': {'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'AES256'}}]}}
+2023-03-09 11:11:02,199 [INFO] Bucket Policy: {'PublicAccessBlockConfiguration': {'BlockPublicAcls': True, 'BlockPublicPolicy': True, 'IgnorePublicAcls': True, 'RestrictPublicBuckets': True}}
+2023-03-09 11:11:02,199 [INFO] ===================
+2023-03-09 11:11:02,199 [INFO] Checking if S3 Bucket terraform-remote-state-583007948674 already exists
+2023-03-09 11:11:02,417 [INFO] [404] S3 Bucket terraform-remote-state-583007948674 does not exist
+2023-03-09 11:11:04,105 [INFO] ============================
+2023-03-09 11:11:04,106 [INFO] DynamoDB Table Configuration
+2023-03-09 11:11:04,106 [INFO] ============================
+2023-03-09 11:11:04,106 [INFO] DynamoDB Table Name: terraform-remote-state-583007948674
+2023-03-09 11:11:04,106 [INFO] DynamoDB Table Region: eu-west-2
+2023-03-09 11:11:04,106 [INFO] DynamoDB Table Read Capacity: 5
+2023-03-09 11:11:04,106 [INFO] DynamoDB Table Write Capacity: 5
+2023-03-09 11:11:04,106 [INFO] DynamoDB Primary Key: LockID
+2023-03-09 11:11:04,106 [INFO] ========================================
+2023-03-09 11:11:04,129 [INFO] Checking if DynamoDB Table terraform-remote-state-583007948674 already exists
+2023-03-09 11:11:04,374 [INFO] *******************************
+2023-03-09 11:11:04,374 [INFO] S3 and DynamoDB Backend Details
+2023-03-09 11:11:04,374 [INFO] Add the configuration below to your Terraform configuration!
+2023-03-09 11:11:04,375 [INFO] ************************************************************
+2023-03-09 11:11:04,375 [INFO] S3 Bucket Name: terraform-remote-state-583007948674
+2023-03-09 11:11:04,375 [INFO] S3 Bucket Region: eu-west-2
+2023-03-09 11:11:04,375 [INFO] KMS Key ID: 36924476-c6e2-42f7-a259-15fcf6d5ef27
+2023-03-09 11:11:04,375 [INFO] KMS Key Alias: alias/terraform-remote-state-583007948674
+2023-03-09 11:11:04,375 [INFO] DynamoDB Table Name: terraform-remote-state-583007948674
+2023-03-09 11:11:04,375 [INFO] =============================================
+2023-03-09 11:11:04,375 [INFO] Terraform Remote Backend Bootstrap Completed!
+```

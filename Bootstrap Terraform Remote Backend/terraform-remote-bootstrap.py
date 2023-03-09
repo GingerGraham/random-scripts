@@ -577,13 +577,13 @@ def _check_existing_s3_bucket(s3_client, bucket_name):
 
     except ClientError as e:
         if e.response['Error']['Code'] == '301':
-            logging.warning("[301] S3 Bucket {0} is redirected and may already exist in another account".format(bucket_name))
+            logging.error("[301] S3 Bucket {0} is redirected and may already exist in another account".format(bucket_name))
             sys.exit(1)
         if e.response['Error']['Code'] == '403':
-            logging.warning("[403] Private Bucket.  Forbidden access to S3 Bucket {0}, may exist in another account".format(bucket_name))
+            logging.error("[403] Private Bucket.  Forbidden access to S3 Bucket {0}, may exist in another account".format(bucket_name))
             sys.exit(1)
         if e.response['Error']['Code'] == '404':
-            logging.warning("[404] S3 Bucket {0} does not exist".format(bucket_name))
+            logging.info("[404] S3 Bucket {0} does not exist".format(bucket_name))
             return False
         logging.error("Error in _check_existing_s3_bucket: {0}".format(e))
         sys.exit(1)
