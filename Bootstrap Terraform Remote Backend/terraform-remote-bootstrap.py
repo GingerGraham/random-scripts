@@ -89,6 +89,7 @@ import boto3
 from os import environ
 from botocore.exceptions import ClientError,ParamValidationError
 from datetime import datetime,timezone
+from pathlib import PureWindowsPath,PurePosixPath
 
 # Global Variables
 version = "1.0.1"
@@ -178,7 +179,6 @@ def _create_log_file(log_path):
         str: Path to log file
     """
     try:
-        logging.debug("Function: _create_log_file started with log_path: {}".format(log_path))
 
         # Split the path into directory and file name
         # Handle if ~ is passed as the log file location
@@ -186,7 +186,11 @@ def _create_log_file(log_path):
 
         # If OS is Windows, replace \ with / to avoid errors
         if os.name == 'nt':
-            log_path = path.replace('/', '\\')
+            # log_path = Path.replace('/', '\\')
+            log_path = PureWindowsPath(log_path)
+
+        if os.name == 'posix':
+            log_path = PurePosixPath(log_path)
 
         # Split the path into directory and file name
         # filename = os.path.basename(path)
@@ -202,15 +206,12 @@ def _create_log_file(log_path):
             print("Creating file: {0}".format(log_path))
             open(log_path, 'a').close()
 
-        logging.debug("Returning: {}".format(log_path))
-        logging.debug("Function: create_log_file completed")
-
         # Return the path
         return log_path
 
 
     except Exception as e:
-        logging.error("An error occurred in create_log_file: {}".format(e))
+        print("An error occurred in create_log_file: {}".format(e))
         sys.exit(1)
 
 
@@ -308,13 +309,12 @@ def _configure_logging():
     Returns:
         None
     """
-
     logging.basicConfig(
         level=log_level,
         format=log_format,
         handlers=[
-            logging.FileHandler(logging_file),
-            logging.StreamHandler(sys.stdout)
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(logging_file)
         ]
     )
 
@@ -340,22 +340,20 @@ def _aws_connect(aws_profile, region):
             aws_session = boto3.Session(profile_name=aws_profile,region_name=region)
             # Print AWS Session Details using _print_aws_session_details() and then return to main()
             _print_aws_session_details(aws_session)
-            # logging.debug("Function: _aws_connect() completed")
+            logging.debug("Function: _aws_connect() completed")
             return aws_session
         # Test if AWS Session Token is set in the environment and if so use them to create a boto3 session
         if _check_aws_vars() == 0:
             aws_session = boto3.Session()
             # Print AWS Session Details using _print_aws_session_details() and then return to main()
             _print_aws_session_details(aws_session)
-            # logging.debug("Function: _aws_connect() completed")
+            logging.debug("Function: _aws_connect() completed")
             return aws_session
 
         # If neither the passed profile or AWS Session Token are set in the environment then exit with an error
         logging.error("AWS CLI credentials are not configured or the profile passed does not exist")
         logging.warning("Please configure AWS CLI credentials or set AWS Session Tokens in the environment variables")
         sys.exit(1)
-
-        logging.debug("Function: _aws_connect() completed returning aws_session: {}".format(aws_session))
 
     except ClientError as e:
         logging.error("Error in _aws_connect: {0}".format(e))
@@ -465,7 +463,7 @@ def _check_aws_vars():
         # Check if AWS_ACCESS_KEY_ID is set
         if environ.get('AWS_ACCESS_KEY_ID') is None:
             logging.error("AWS_ACCESS_KEY_ID is not set")
-            # logging.debug("Function: _check_aws_vars() completed")
+            logging.debug("Function: _check_aws_vars() completed")
             return 1
         if environ.get('AWS_SECRET_ACCESS_KEY') is None:
             logging.error("AWS_SECRET_ACCESS_KEY is not set")
@@ -525,8 +523,6 @@ def _lookup_aws_account_id(aws_session):
     try:
         logging.debug("Function: _lookup_aws_account_id() started with args: aws_session = {}".format(aws_session))
 
-        logging.debug("Looking up AWS Account ID")
-
         aws_account_id = aws_session.client('sts').get_caller_identity().get('Account')
 
         logging.debug("Returned AWS Account ID: {0}".format(aws_account_id))
@@ -560,7 +556,7 @@ def _check_existing_s3_bucket(s3_client, bucket_name):
         # Check if s3 bucket exists
         if s3_client.head_bucket(Bucket=bucket_name):
             logging.debug("S3 Bucket {0} already exists".format(bucket_name))
-            logging.debug("Function: _check_existing_s3_bucket() completed")    
+            logging.debug("Function: _check_existing_s3_bucket() completed")
             return True
         else:
             logging.debug("S3 Bucket {0} does not exist".format(bucket_name))
@@ -609,7 +605,7 @@ def _store_s3_bucket_details(bucket_name, bucket_region, bucket_kms_key_id, buck
     """
     try:
         logging.debug("Function: _store_s3_bucket_details() started with args: bucket_name = {0}, bucket_region = {1}, bucket_kms_key_id = {2}, bucket_encryption = {3}, kms_key_id = {4}, kms_key_arn = {5}, kms_key_alias = {6}".format(bucket_name, bucket_region, bucket_kms_key_id, bucket_encryption, kms_key_id, kms_key_arn, kms_key_alias))
-                      
+
         # Declare global variables to be updated in this function
         global s3_bucket_name
         global s3_bucket_region
@@ -716,7 +712,7 @@ def _create_s3_bucket(args, aws_account_id, aws_session):
                         break
                 if key_exists is True: # Break out of the for loop if the key exists
                     break
-        
+
         # Where a KMS key ID was passed and encryption is enabled then find the ARN and use the passed KMS key
         if args.bucket_kms_key_id is not None and args.bucket_encryption is True:
             kms_key_id = args.bucket_kms_key_id
@@ -940,7 +936,7 @@ def _create_dynamodb_table(args, aws_account_id, aws_session):
         # Store the DynamoDB Table name in the global variable dynamodb_table
         _store_dynamodb_table_details(args.dynamodb_table_name)
 
-        # logging.debug("Exiting Function _create_dynamodb_table with dynamodb_table_name: {0}".format(dynamodb_table_name))
+        logging.debug("Exiting Function _create_dynamodb_table with dynamodb_table_name: {0}".format(dynamodb_table_name))
 
     except ClientError as e:
         logging.error("Error in _create_dynamodb_table: {0}".format(e))
