@@ -100,6 +100,7 @@ timestamp = datetime.now(timezone.utc).strftime('%H:%M')
 s3_bucket_name = None # S3 Bucket Name
 s3_bucket_region = None # S3 Bucket Region
 s3_kms_key_id = None # KMS Key ID
+s3_kms_key_arn = None # KMS Key ARN
 s3_kms_key_alias = None # KMS Key Alias
 dynamodb_table = None # DynamoDB Table Name
 
@@ -177,7 +178,7 @@ def _create_log_file(log_path):
         str: Path to log file
     """
     try:
-        # logging.debug("Function: create_log_file")
+        logging.debug("Function: _create_log_file started with log_path: {}".format(log_path))
 
         # Split the path into directory and file name
         # Handle if ~ is passed as the log file location
@@ -201,8 +202,8 @@ def _create_log_file(log_path):
             print("Creating file: {0}".format(log_path))
             open(log_path, 'a').close()
 
-        # logging.debug("Returning: {}".format(log_path))
-        # logging.debug("Function: create_log_file completed")
+        logging.debug("Returning: {}".format(log_path))
+        logging.debug("Function: create_log_file completed")
 
         # Return the path
         return log_path
@@ -240,13 +241,12 @@ def _parse_args (args=None):
         log_level (str): Log level to be used
     """
     try:
-        # logging.debug("Function: parse_args")
 
         all_args = argparse.ArgumentParser(description='Terrform Remote Backend Bootstrap v{}'.format(version), formatter_class=argparse.RawTextHelpFormatter)
 
         connection_group = all_args.add_argument_group('AWS Connection Details')
         connection_group.add_argument('--aws-profile', '-a', required=False, default='default', help='AWS Profile: default = default (Example: -a vcra-prod)', type=str)
-        connection_group.add_argument('--region', '-r', required=False, default='us-east-1',help="AWS Region: default = us-east-1 (Example: -r eu-west-2)", type=str)
+        connection_group.add_argument('--region', '-r', required=False, default='eu-west-2',help="AWS Region: default = eu-west-2 (Example: -r eu-west-1)", type=str)
 
         bucket_group = all_args.add_argument_group('S3 Bucket Details')
         bucket_group.add_argument('--bucket-name', '-bn', required=False, default='terraform-remote-state', help='S3 Bucket Name: default = terraform-remote-state (Example: -bn terraform-remote-state)', type=str)
@@ -290,9 +290,6 @@ def _parse_args (args=None):
             if key == 'log_level':
                 log_level=value.upper()
 
-        # logging.debug("Returned args: {}".format(args))
-        # logging.debug("Function: _parse_args() completed")
-
         return args
 
     except Exception as e:
@@ -334,7 +331,7 @@ def _aws_connect(aws_profile, region):
         None
     """
     try:
-        # logging.debug("Function: _aws_connect() started")
+        logging.debug("Function: _aws_connect() started with args: aws_profile = {}, region = {}".format(aws_profile, region))
 
         logging.info("Connecting to AWS")
 
@@ -358,6 +355,8 @@ def _aws_connect(aws_profile, region):
         logging.warning("Please configure AWS CLI credentials or set AWS Session Tokens in the environment variables")
         sys.exit(1)
 
+        logging.debug("Function: _aws_connect() completed returning aws_session: {}".format(aws_session))
+
     except ClientError as e:
         logging.error("Error in _aws_connect: {0}".format(e))
         sys.exit(1)
@@ -378,7 +377,7 @@ def _print_aws_session_details(aws_session):
         None
     """
     try:
-        # logging.debug("Function: _print_aws_session_details() started")
+        logging.debug("Function: _print_aws_session_details() started with args: aws_session = {}".format(aws_session))
 
         _print_message_section("AWS Session Details:", top=False, bottom=False)
 
@@ -389,7 +388,7 @@ def _print_aws_session_details(aws_session):
 
         _print_message_section("Connected to AWS", top=False, bottom=False)
 
-        # logging.debug("Function: _print_aws_session_details() completed")
+        logging.debug("Function: _print_aws_session_details() completed")
 
     except ClientError as e:
         logging.error("Error in _print_aws_session_details: {0}".format(e))
@@ -413,7 +412,7 @@ def _check_aws_profile(aws_profile):
     """
     # Check if AWS CLI credentials are configured and that the passed profile exists
     try:
-        # logging.debug("Function: _check_aws_profile() started")
+        logging.debug("Function: _check_aws_profile() started with args: aws_profile = {}".format(aws_profile))
 
         logging.info("Checking AWS CLI credentials")
 
@@ -435,13 +434,11 @@ def _check_aws_profile(aws_profile):
 
         if aws_profile in aws_profiles:
             logging.info("AWS CLI credentials are configured and profile {0} exists".format(aws_profile))
-            # _print_message_section("AWS CLI credentials are configured and profile {0} exists".format(args.aws_profile), top=False, bottom=True)
-            # logging.debug("Function: _check_aws_profile() completed")
+            logging.debug("Function: _check_aws_profile() completed")
             return 0
         else:
             logging.error("AWS CLI credentials are not configured or profile {0} does not exist".format(aws_profile))
-            # _print_message_section("AWS CLI credentials are not configured or profile {0} does not exist".format(args.aws_profile), top=False, bottom=True)
-            # logging.debug("Function: _check_aws_profile() completed")
+            logging.debug("Function: _check_aws_profile() completed")
             return 1
 
     except ClientError as e:
@@ -463,7 +460,7 @@ def _check_aws_vars():
     """
     # Check if AWS variables AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and optionally AWS_SESSION_TOKEN are set
     try:
-        # logging.debug("Function: _check_aws_vars() started")
+        logging.debug("Function: _check_aws_vars() started")
 
         # Check if AWS_ACCESS_KEY_ID is set
         if environ.get('AWS_ACCESS_KEY_ID') is None:
@@ -476,11 +473,11 @@ def _check_aws_vars():
             return 1
         if environ.get('AWS_SESSION_TOKEN') is None:
             logging.warning("AWS_SESSION_TOKEN is not set, ensure that the configured AWS User does not require MFA")
-            # logging.debug("Function: _check_aws_vars() completed")
+            logging.debug("Function: _check_aws_vars() completed")
             return 0
         # If all variables are set then return 0
         logging.info("AWS variables are set")
-        # logging.debug("Function: _check_aws_vars() completed")
+        logging.debug("Function: _check_aws_vars() completed")
         return 0
 
     except ClientError as e:
@@ -500,7 +497,7 @@ def _print_args(args):
     Returns:
         None
     """
-    # logging.debug("Function: _print_args() started")
+    logging.debug("Function: _print_args() started with args: args = {}".format(args))
 
     _print_message_section("Supplied Arguments", top=False, bottom=True)
 
@@ -511,7 +508,7 @@ def _print_args(args):
 
     logging.info("===================")
 
-    # logging.debug("Function: _print_args() completed")
+    logging.debug("Function: _print_args() completed")
 
 
 def _lookup_aws_account_id(aws_session):
@@ -526,14 +523,14 @@ def _lookup_aws_account_id(aws_session):
         str: AWS Account ID
     """
     try:
-        # logging.debug("Function: _lookup_aws_account_id() started")
+        logging.debug("Function: _lookup_aws_account_id() started with args: aws_session = {}".format(aws_session))
 
         logging.debug("Looking up AWS Account ID")
 
         aws_account_id = aws_session.client('sts').get_caller_identity().get('Account')
 
         logging.debug("Returned AWS Account ID: {0}".format(aws_account_id))
-        # logging.debug("Function: _lookup_aws_account_id() completed")
+        logging.debug("Function: _lookup_aws_account_id() completed")
 
         return aws_account_id
 
@@ -556,24 +553,20 @@ def _check_existing_s3_bucket(s3_client, bucket_name):
         aws_session (_type_): _description_
     """
     try:
-        # logging.debug("Function: _check_existing_s3_bucket() started")
+        logging.debug("Function: _check_existing_s3_bucket() started with args: s3_client = {0}, bucket_name = {1}".format(s3_client, bucket_name))
+
         logging.info("Checking if S3 Bucket {0} already exists".format(bucket_name))
 
         # Check if s3 bucket exists
         if s3_client.head_bucket(Bucket=bucket_name):
             logging.debug("S3 Bucket {0} already exists".format(bucket_name))
+            logging.debug("Function: _check_existing_s3_bucket() completed")    
             return True
         else:
             logging.debug("S3 Bucket {0} does not exist".format(bucket_name))
+            logging.debug("Function: _check_existing_s3_bucket() completed")
             return False
 
-        # # Check if s3 bucket exists
-        # if s3_client(bucket_name).creation_date is None:
-        #     logging.debug("S3 Bucket {0} does not exist".format(bucket_name))
-        #     return False
-        # else:
-        #     logging.debug("S3 Bucket {0} already exists".format(bucket_name))
-        #     return True
 
     except ClientError as e:
         if e.response['Error']['Code'] == '301':
@@ -595,7 +588,7 @@ def _check_existing_s3_bucket(s3_client, bucket_name):
         sys.exit(1)
 
 
-def _store_s3_bucket_details(bucket_name, bucket_region, bucket_kms_key_id, bucket_encryption, kms_key_id, kms_key_alias):
+def _store_s3_bucket_details(bucket_name, bucket_region, bucket_kms_key_id, bucket_encryption, kms_key_id, kms_key_arn, kms_key_alias):
     """Store S3 Bucket details in DynamoDB
 
     This function stores the S3 Bucket details ready to be displayed at the end of the script.
@@ -606,6 +599,8 @@ def _store_s3_bucket_details(bucket_name, bucket_region, bucket_kms_key_id, buck
         bucket_kms_key_id (str): KMS Key ID
         bucket_encryption (bool): S3 Bucket encryption
         kms_key_id (str): KMS Key ID
+        kms_key_arn (str): KMS Key ARN
+        kms_key_alias (str): KMS Key Alias
 
     Returns:
         s3_bucket_name (str): S3 Bucket name
@@ -613,23 +608,31 @@ def _store_s3_bucket_details(bucket_name, bucket_region, bucket_kms_key_id, buck
         s3_kms_key_id (str): KMS Key ID
     """
     try:
+        logging.debug("Function: _store_s3_bucket_details() started with args: bucket_name = {0}, bucket_region = {1}, bucket_kms_key_id = {2}, bucket_encryption = {3}, kms_key_id = {4}, kms_key_arn = {5}, kms_key_alias = {6}".format(bucket_name, bucket_region, bucket_kms_key_id, bucket_encryption, kms_key_id, kms_key_arn, kms_key_alias))
+                      
         # Declare global variables to be updated in this function
         global s3_bucket_name
         global s3_bucket_region
         global s3_kms_key_id
+        global s3_kms_key_arn
         global s3_kms_key_alias
 
         # Store the S3 Bucket name in the global variable s3_bucket_name
         s3_bucket_name = bucket_name
         # Store the S3 Bucket region in the global variable s3_bucket_region
         s3_bucket_region = bucket_region
-        # Store the KMS key ID in the global variable kms_key_id if it was created
+        # Store the KMS key ID in the global variables kms_key_id and kms_key_arn if they were created
         if bucket_kms_key_id is None and bucket_encryption is True:
             s3_kms_key_id = kms_key_id
         else:
             s3_kms_key_id = bucket_kms_key_id
+        # Store the KMS key ARN in the global variable s3_kms_key_arn
+        s3_kms_key_arn = kms_key_arn
         # Store KMS key alias in the global variable s3_kms_key_alias
         s3_kms_key_alias = kms_key_alias
+
+        logging.debug("Function: _store_s3_bucket_details() completed with args: s3_bucket_name = {0}, s3_bucket_region = {1}, s3_kms_key_id = {2}, s3_kms_key_arn = {3}, s3_kms_key_alias = {4}".format(s3_bucket_name, s3_bucket_region, s3_kms_key_id, s3_kms_key_arn, s3_kms_key_alias))
+
         return
 
     except ClientError as e:
@@ -656,14 +659,11 @@ def _create_s3_bucket(args, aws_account_id, aws_session):
         kms_key_id (str): KMS Key ID
     """
     try:
-        # logging.debug("Function: _create_s3_bucket() started")
+        logging.debug("Function: _create_s3_bucket() started with args: args = {0}, aws_account_id = {1}, aws_session = {2}".format(args, aws_account_id, aws_session))
 
-        # Create an S3 client from scratch not using the existing aws_session
-        s3_client = boto3.client('s3', region_name=args.bucket_region)
+        # Create an S3 client using the available AWS Session
+        s3_client=aws_session.client('s3', region_name=args.bucket_region)
 
-        # Use the global variable aws_session to create an S3 client specifying the S3 region
-        # s3_client = aws_session.client('s3', region_name=args.bucket_region)
-        # s3_client = aws_session.client('s3')
         # Disable auto-redirection of requests to another region
         deq = s3_client.meta.events._emitter._handlers.prefix_search('needs-retry.s3')
         while len(deq) > 0:
@@ -687,8 +687,12 @@ def _create_s3_bucket(args, aws_account_id, aws_session):
         # Create a KMS Client session
         kms_client = aws_session.client('kms')
 
-        # Open variable for kms_key_id
+        # Open variables for kms_key_id and kms_key_arn
         kms_key_id = None
+        kms_key_arn = None
+
+        # Set a variable to check if the KMS Key already exists
+        key_exists = False
 
         # Prepare an alias for the KMS Key
         kms_key_alias = 'alias/{0}'.format(args.bucket_name)
@@ -697,19 +701,29 @@ def _create_s3_bucket(args, aws_account_id, aws_session):
         if args.bucket_kms_key_id is None and args.bucket_encryption is True:
             # Check if the KMS Key Alias already exists
             keys_list = kms_client.list_keys()
-            key_exists = False
             for key in keys_list['Keys']:
                 key_id = key['KeyId']
+                key_arn = kms_client.describe_key(KeyId=key_id)['KeyMetadata']['Arn']
                 key_aliases = kms_client.list_aliases(KeyId=key_id)
                 for key_alias in key_aliases['Aliases']:
                     if key_alias['AliasName'] == kms_key_alias:
                         kms_key_id = key_id
+                        kms_key_arn = key_arn
                         key_exists = True
-                        logging.debug("KMS Key ID {0} already exists".format(kms_key_id))
-                        bucket_config['ServerSideEncryptionConfiguration'] = {'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms', 'KMSMasterKeyID': kms_key_id}}]}
+                        logging.info("KMS Key ID {0} already exists".format(kms_key_id))
+                        # Update the bucket_config with the KMS Key ID and enable the use of bucket key to reduce KMS calls
+                        bucket_config['ServerSideEncryptionConfiguration'] = {'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms', 'KMSMasterKeyID': kms_key_arn}, 'BucketKeyEnabled': True}]}
                         break
                 if key_exists is True: # Break out of the for loop if the key exists
                     break
+        
+        # Where a KMS key ID was passed and encryption is enabled then find the ARN and use the passed KMS key
+        if args.bucket_kms_key_id is not None and args.bucket_encryption is True:
+            kms_key_id = args.bucket_kms_key_id
+            kms_key_arn = kms_client.describe_key(KeyId=args.bucket_kms_key_id)['KeyMetadata']['Arn']
+            kms_key_alias = kms_client.list_aliases(KeyId=args.bucket_kms_key_id)['Aliases'][0]['AliasName']
+            key_exists = True
+            bucket_config['ServerSideEncryptionConfiguration'] = {'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms', 'KMSMasterKeyID': kms_key_arn}, 'BucketKeyEnabled': True}]}
 
         # If list_only is True log what what we would do if the key does not already exist
         if key_exists is not True and args.bucket_encryption is True and args.list_only is True:
@@ -718,14 +732,8 @@ def _create_s3_bucket(args, aws_account_id, aws_session):
         # Create key
         if key_exists is not True and args.bucket_encryption is True and args.list_only is False:
             create_key = True
-            # kms_key = kms_client.create_key()
-            # kms_key_id = kms_key['KeyMetadata']['KeyId']
-            # kms_client.create_alias(AliasName=kms_key_alias, TargetKeyId=kms_key_id)
-            # bucket_config['ServerSideEncryptionConfiguration'] = {'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms', 'KMSMasterKeyID': kms_key_id}}]}
-
-        # If a KMS key was passed and encryption is enabled then use the passed KMS key
-        if args.bucket_kms_key_id is not None and args.bucket_encryption is True:
-            bucket_config['ServerSideEncryptionConfiguration'] = {'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms', 'KMSMasterKeyID': args.bucket_kms_key}}]}
+        else:
+            create_key = False
 
         # Create a bucket policy for the S3 Bucket based on the bucket_public_access_block true/false
         bucket_policy = {}
@@ -738,8 +746,14 @@ def _create_s3_bucket(args, aws_account_id, aws_session):
         _print_message_section("S3 Bucket Configuration", top=True, bottom=True)
         logging.info("Bucket Name: {0}".format(args.bucket_name))
         logging.info("Bucket Region: {0}".format(args.bucket_region))
-        logging.info("Bucket KMS Key ID: {0}".format(args.bucket_kms_key_id))
-        logging.info("Bucket KMS Key Alias: {0}".format(kms_key_alias))
+        if kms_key_id:
+            logging.info("Bucket KMS Key ID: {0}".format(kms_key_id))
+        else:
+            logging.info("Bucket KMS Key ID: {0}".format(args.bucket_kms_key_id))
+        if kms_key_arn:
+            logging.info("Bucket KMS Key ARN: {0}".format(kms_key_arn))
+        if kms_key_alias:
+            logging.info("Bucket KMS Key Alias: {0}".format(kms_key_alias))
         # Log bucket configuration
         if bucket_config:
             logging.info("Bucket Configuration: {0}".format(bucket_config))
@@ -752,20 +766,23 @@ def _create_s3_bucket(args, aws_account_id, aws_session):
         if _check_existing_s3_bucket(s3_client, args.bucket_name) is True:
             logging.info("S3 Bucket {0} already exists".format(args.bucket_name))
             # Store the S3 Bucket details
-            _store_s3_bucket_details(args.bucket_name, args.bucket_region, args.bucket_kms_key_id, args.bucket_encryption, kms_key_id, kms_key_alias)
+            _store_s3_bucket_details(args.bucket_name, args.bucket_region, args.bucket_kms_key_id, args.bucket_encryption, kms_key_id, kms_key_arn, kms_key_alias)
+            logging.debug("Function _create_s3_bucket() completed")
             return
 
         if args.list_only is True:
             logging.warning("List-only/dry-run is set, not creating S3 Bucket")
-            _store_s3_bucket_details(args.bucket_name, args.bucket_region, args.bucket_kms_key_id, args.bucket_encryption, kms_key_id, kms_key_alias)
+            _store_s3_bucket_details(args.bucket_name, args.bucket_region, args.bucket_kms_key_id, args.bucket_encryption, kms_key_id,kms_key_arn, kms_key_alias)
+            logging.debug("Function _create_s3_bucket() completed")
             return
 
         # If list-only/dry-run is not set and the bucket doesn't already exist then create the S3 Bucket and key
         if create_key is True:
             kms_key = kms_client.create_key()
+            kms_key_arn = kms_key['KeyMetadata']['Arn']
             kms_key_id = kms_key['KeyMetadata']['KeyId']
             kms_client.create_alias(AliasName=kms_key_alias, TargetKeyId=kms_key_id)
-            bucket_config['ServerSideEncryptionConfiguration'] = {'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms', 'KMSMasterKeyID': kms_key_id}}]}
+            bucket_config['ServerSideEncryptionConfiguration'] = {'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms', 'KMSMasterKeyID': kms_key_arn}, 'BucketKeyEnabled': True}]}
         # Create the S3 Bucket
         s3_client.create_bucket(Bucket=args.bucket_name, CreateBucketConfiguration={'LocationConstraint': args.bucket_region})
         # If the bucket_config is not empty then set the configuration for the S3 Bucket
@@ -777,9 +794,9 @@ def _create_s3_bucket(args, aws_account_id, aws_session):
             s3_client.put_public_access_block(Bucket=args.bucket_name, PublicAccessBlockConfiguration=bucket_policy['PublicAccessBlockConfiguration'])
 
         # Store the S3 Bucket details
-        _store_s3_bucket_details(args.bucket_name, args.bucket_region, args.bucket_kms_key_id, args.bucket_encryption, kms_key_id, kms_key_alias)
+        _store_s3_bucket_details(args.bucket_name, args.bucket_region, args.bucket_kms_key_id, args.bucket_encryption, kms_key_id, kms_key_arn, kms_key_alias)
 
-        # logging.debug("Function: _create_s3_bucket() completed")
+        logging.debug("Function: _create_s3_bucket() completed")
 
     except AttributeError as e:
         logging.error("Error in _create_s3_bucket: {0}".format(e))
@@ -811,7 +828,7 @@ def _check_existing_dynamodb_table(dynamodb_client, dynamodb_table_name):
         table_exists (bool): True if the DynamoDB Table exists, False if it does not exist
     """
     try:
-        # logging.debug("Function _check_existing_dynamodb_table called with dynamodb_table_name: {0}".format(dynamodb_table_name))
+        logging.debug("Function _check_existing_dynamodb_table called with arguments: dynamodb_client={0}, dynamodb_table_name={1}".format(dynamodb_client, dynamodb_table_name))
 
         logging.info("Checking if DynamoDB Table {0} already exists".format(dynamodb_table_name))
 
@@ -823,7 +840,7 @@ def _check_existing_dynamodb_table(dynamodb_client, dynamodb_table_name):
                 table_exists = True
                 break
 
-        # logging.debug("Function: _check_existing_dynamodb_table() completed")
+        logging.debug("Function: _check_existing_dynamodb_table() completed")
 
         return table_exists
 
@@ -850,13 +867,13 @@ def _store_dynamodb_table_details(dynamodb_table_name):
         dynamodb_table (str): Name of the DynamoDB Table
     """
     try:
-        # logging.debug("Function _store_dynamodb_table_details called with dynamodb_table_name: {0} and dynamodb_table_region: {1}".format(dynamodb_table_name, dynamodb_table_region))
+        logging.debug("Function _store_dynamodb_table_details called with arguments: dynamodb_table_name={0}".format(dynamodb_table_name))
 
         # Declare global variables to be updated in this function
         global dynamodb_table # Store the DynamoDB Table details
         dynamodb_table = dynamodb_table_name
 
-        # logging.debug("Function: _store_dynamodb_table_details() completed")
+        logging.debug("Function: _store_dynamodb_table_details() completed")
 
     except AttributeError as e:
         logging.error("Error in _store_dynamodb_table_details: {0}".format(e))
@@ -881,7 +898,7 @@ def _create_dynamodb_table(args, aws_account_id, aws_session):
         dynamodb_table_name (str): Name of the DynamoDB Table
     """
     try:
-        # logging.debug("Function _create_dynamodb_table called with args: {0}".format(args))
+        logging.debug("Function _create_dynamodb_table called with arguments: args={0}, aws_account_id={1}, aws_session={2}".format(args, aws_account_id, aws_session))
 
         # Append the AWS Account ID to the DynamoDB Table name to ensure it is unique
         args.dynamodb_table_name = '{0}-{1}'.format(args.dynamodb_table_name, aws_account_id)
@@ -905,6 +922,7 @@ def _create_dynamodb_table(args, aws_account_id, aws_session):
         if _check_existing_dynamodb_table(dynamodb_client, args.dynamodb_table_name) is True:
             logging.info("DynamoDB Table {0} already exists".format(args.dynamodb_table_name))
             _store_dynamodb_table_details(args.dynamodb_table_name)
+            logging.debug("Function: _create_dynamodb_table() completed")
             return
 
         # If list-only/dry-run is set then exit after printing the configuration
@@ -912,7 +930,7 @@ def _create_dynamodb_table(args, aws_account_id, aws_session):
             # Store the DynamoDB Table name in the global variable dynamodb_table_name
             _store_dynamodb_table_details(args.dynamodb_table_name)
             logging.warning("--list-only/dry-run no DynamoDB Table was created")
-            # logging.debug("Function: _create_dynamodb_table() completed")
+            logging.debug("Function: _create_dynamodb_table() completed")
             return
 
         # If list-only/dry-run is not set then create the DynamoDB Table
@@ -947,7 +965,7 @@ def _print_s3_and_dynamodb_backend_details():
         None
     """
     try:
-        # logging.debug("Function: _print_s3_and_dynamodb_backend_details")
+        logging.debug("Function: _print_s3_and_dynamodb_backend_details")
 
         _print_message_section('S3 and DynamoDB Backend Details', top=True, bottom=False, divider='*')
         _print_message_section('Add the configuration below to your Terraform configuration!', top=False, bottom=True, divider='*')
@@ -956,13 +974,18 @@ def _print_s3_and_dynamodb_backend_details():
         logging.info("S3 Bucket Region: {0}".format(s3_bucket_region))
         if s3_kms_key_id is not None:
             logging.info("KMS Key ID: {0}".format(s3_kms_key_id))
+        if s3_kms_key_arn is not None:
+            logging.info("KMS Key ARN: {0}".format(s3_kms_key_arn))
         if s3_kms_key_alias is not None:
             logging.info("KMS Key Alias: {0}".format(s3_kms_key_alias))
         if dynamodb_table is not None:
             logging.info("DynamoDB Table Name: {0}".format(dynamodb_table))
 
-        # logging.debug("Exiting Function: _print_s3_and_dynamodb_backend_details")
+        logging.debug("Exiting Function: _print_s3_and_dynamodb_backend_details")
 
+    except NameError as e:
+        logging.error("Error in _print_s3_and_dynamodb_backend_details: {0}".format(e))
+        sys.exit(1)
     except:
         logging.error("Unexpected error in _print_s3_and_dynamodb_backend_details: {0}".format(sys.exc_info()[0]))
         sys.exit(1)
@@ -978,10 +1001,15 @@ def create_s3_backend():
         None
 
     Returns:
-        None
+        s3_bucket_name (str): S3 Bucket Name
+        s3_bucket_region (str): S3 Bucket Region
+        s3_kms_key_id (str): S3 KMS Key ID
+        s3_kms_key_arn (str): S3 KMS Key ARN
+        s3_kms_key_alias (str): S3 KMS Key Alias
+        dynamodb_table (str): DynamoDB Table Name
     """
     _main(sys.argv[1:]) # Call main function and pass any arguments
-    return s3_bucket_name, s3_bucket_region, s3_kms_key_id, dynamodb_table_name
+    return s3_bucket_name, s3_bucket_region, s3_kms_key_id, s3_kms_key_arn, s3_kms_key_alias, dynamodb_table
 
 if __name__ == "__main__":
     _main(sys.argv[1:]) # Call main function and pass any arguments
